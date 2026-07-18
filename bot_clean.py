@@ -271,6 +271,166 @@ async def cmd_speed(message: types.Message):
     result_d = check_pagespeed(url, "desktop")
     await send_long(message, format_pagespeed_report(result_d))
 
+
+@dp.message(Command("post"))
+async def cmd_post(message: types.Message):
+    if str(message.from_user.id) != "8335951518":
+        return
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📅 Еженедельная (LSI)", callback_data="post_type|weekly")],
+            [InlineKeyboardButton(text="📊 Раз в 2 недели (Кейс)", callback_data="post_type|biweekly")],
+            [InlineKeyboardButton(text="🏛 Раз в месяц (Pillar)", callback_data="post_type|monthly")],
+        ])
+        await message.answer(
+            "📝 Автопубликация статьи в WordPress\n\n"
+            "Выберите тип статьи:",
+            reply_markup=kb
+        )
+        return
+    topic = args[1]
+    audit_data["post_topic_" + str(message.from_user.id)] = topic
+    
+    # Проверка дублей
+    await message.answer("🔍 Проверяю дубли на сайте...")
+    from post_module import check_duplicate, generate_article
+    dup = await check_duplicate(topic)
+    
+    if dup.get("duplicate"):
+        exact = [s for s in dup["similar"] if s["match"] == "exact"]
+        msg = "❌ Точный дубль найден на сайте:\n\n"
+        for s in exact:
+            msg += "📄 " + s["title"] + "\n" + s["url"] + "\n\n"
+        msg += "Предложите другую тему или уточните угол подачи."
+        await message.answer(msg)
+        return
+    
+    if dup.get("similar"):
+        msg = "⚠️ Найдены похожие статьи:\n\n"
+        for s in dup["similar"]:
+            msg += "📄 " + s["title"] + " (" + s["match"] + ")\n" + s["url"] + "\n"
+        msg += "\nГенерирую статью с другим углом подачи..."
+        await message.answer(msg)
+    else:
+        await message.answer("✅ Дублей не найдено. Генерирую статью...")
+    
+    await message.answer("⏳ Пишу статью: " + topic + "\nПодождите 60-90 секунд...")
+    html = await generate_article(topic)
+    # Сохраняем черновик
+    audit_data["post_draft_" + str(message.from_user.id)] = html
+    # Показываем превью
+    preview = html[:800].replace("<", "&lt;").replace(">", "&gt;") if len(html) > 100 else html
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Опубликовать в WordPress", callback_data="post_publish|draft")],
+        [InlineKeyboardButton(text="🔍 Опубликовать (черновик)", callback_data="post_publish|pending")],
+        [InlineKeyboardButton(text="🔄 Переписать", callback_data="post_rewrite")],
+        [InlineKeyboardButton(text="❌ Отмена", callback_data="post_cancel")],
+    ])
+    await message.answer(
+        "✅ Статья готова!\n\n"
+        "📝 Тема: " + topic + "\n"
+        "📏 Размер: " + str(len(html)) + " символов\n\n"
+        "Превью первых 500 символов:\n" + html[:500] + "...",
+        reply_markup=kb
+    )
+
+@dp.callback_query(lambda c: c.data and c.data.startswith("post_type|"))
+async def post_type_select(call: types.CallbackQuery):
+    if str(call.from_user.id) != "8335951518":
+        return
+    await call.answer()
+    article_type = call.data.split("|")[1]
+    audit_data["post_type_" + str(call.from_user.id)] = article_type
+    await call.message.answer(
+        "📝 Введите тему статьи\n\n"
+        "Например: /post SEO-аудит для интернет-магазина"
+    )
+
+@dp.callback_query(lambda c: c.data and c.data.startswith("post_publish|"))
+async def post_publish(call: types.CallbackQuery):
+    if str(call.from_user.id) != "8335951518":
+        return
+    await call.answer()
+    status = call.data.split("|")[1]
+    uid = str(call.from_user.id)
+    html = audit_data.get("post_draft_" + uid, "")
+    topic = audit_data.get("post_topic_" + uid, "Статья")
+    if not html:
+        await call.message.answer("Черновик не найден. Создайте статью через /post Тема")
+        return
+    await call.message.answer("⏳ Публикую в WordPress...")
+    from post_module import publish_to_wordpress
+    result = await publish_to_wordpress(topic, html, status)
+    if result.get("ok"):
+        post_id = result.get("id")
+        post_url = result.get("url", "")
+        
+        await call.message.answer("✅ Статья опубликована! Настраиваю...")
+        
+        from post_module import set_post_category, add_to_menu, setup_post_seo
+        html_content = audit_data.get("post_draft_" + uid, "")
+        
+        # 1. Назначаем категорию
+        cat_result = await set_post_category(post_id, topic)
+        cat_msg = "✅ Категория: " + cat_result.get("category", "SEO") if cat_result.get("ok") else "⚠️ Категория не назначена"
+        
+        # 2. Настраиваем SEO мета
+        seo_result = await setup_post_seo(post_id, topic, html_content)
+        seo_msg = "✅ SEO мета настроены" if seo_result.get("ok") else "⚠️ SEO мета не настроены"
+        
+        # 3. Добавляем в меню
+        menu_result = await add_to_menu(post_id, topic, post_url, topic)
+        if menu_result.get("ok"):
+            menu_msg = "✅ Добавлено в меню: " + menu_result.get("section", "")
+        else:
+            menu_msg = "⚠️ Меню: " + menu_result.get("section", "") + " (добавьте вручную)"
+        
+        final_msg = (
+            "🎉 Статья полностью настроена!\n\n"
+            "🔗 URL: " + post_url + "\n"
+            "🆔 ID: " + str(post_id) + "\n"
+            "📊 Статус: " + str(result.get("status", "")) + "\n\n" +
+            cat_msg + "\n" +
+            seo_msg + "\n" +
+            menu_msg + "\n\n"
+            "🔍 Проверьте статью на сайте и в Яндекс.Вебмастер."
+        )
+        await call.message.answer(final_msg)
+    else:
+        await call.message.answer("⚠️ Зона верификации: " + str(result.get("error", "")))
+
+@dp.callback_query(lambda c: c.data == "post_rewrite")
+async def post_rewrite(call: types.CallbackQuery):
+    if str(call.from_user.id) != "8335951518":
+        return
+    await call.answer()
+    uid = str(call.from_user.id)
+    topic = audit_data.get("post_topic_" + uid, "")
+    if not topic:
+        await call.message.answer("Тема не найдена. Введите /post Тема")
+        return
+    await call.message.answer("⏳ Переписываю статью: " + topic + "...")
+    from post_module import generate_article
+    art_type = audit_data.get("post_type_" + uid, "weekly")
+    html = await generate_article(topic, art_type)
+    audit_data["post_draft_" + uid] = html
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Опубликовать", callback_data="post_publish|draft")],
+        [InlineKeyboardButton(text="🔍 В черновик", callback_data="post_publish|pending")],
+        [InlineKeyboardButton(text="🔄 Переписать снова", callback_data="post_rewrite")],
+    ])
+    await call.message.answer(
+        "✅ Новая версия готова!\n"
+        "Размер: " + str(len(html)) + " символов\n\n" + html[:500] + "...",
+        reply_markup=kb
+    )
+
+@dp.callback_query(lambda c: c.data == "post_cancel")
+async def post_cancel(call: types.CallbackQuery):
+    await call.answer()
+    await call.message.answer("❌ Публикация отменена.")
+
 @dp.message()
 async def free_text(message: types.Message):
     uid = str(message.from_user.id)
