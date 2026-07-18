@@ -1,6 +1,8 @@
 import requests
 
+import os
 PAGESPEED_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
+PAGESPEED_KEY = os.getenv("PAGESPEED_KEY", "")
 
 def check_pagespeed(url: str, strategy: str = "mobile") -> dict:
     """
@@ -14,6 +16,8 @@ def check_pagespeed(url: str, strategy: str = "mobile") -> dict:
             "strategy": strategy,
             "category": "performance",
         }
+        if PAGESPEED_KEY:
+            params["key"] = PAGESPEED_KEY
         r = requests.get(PAGESPEED_API, params=params, timeout=30)
         data = r.json()
 
