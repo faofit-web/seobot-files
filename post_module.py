@@ -314,6 +314,72 @@ ARTICLE_TYPES = {
     "monthly": "Pillar Content (фундаментальная статья, E-E-A-T)",
 }
 
+ARTICLE_CSS = """<style>
+:root{--primary:#0f172a;--accent:#2563eb;--accent-hover:#1d4ed8;--bg-light:#f8fafc;--text-main:#334155;--text-light:#64748b;--success:#10b981;--tg:#229ED9;--tg-hover:#1c86b8;--star:#f59e0b;--border:#e2e8f0;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:var(--text-main);font-size:18px;background:#fff;-webkit-text-size-adjust:100%}
+a{text-decoration:none;color:var(--accent);transition:0.2s}
+a:hover{color:var(--accent-hover)}
+ul{list-style:none}
+img{max-width:100%;height:auto;display:block}
+.article-wrap{max-width:860px;margin:0 auto;padding:40px 20px}
+h1{font-size:clamp(28px,5vw,42px);font-weight:800;color:var(--primary);line-height:1.2;letter-spacing:-0.02em;margin-bottom:20px}
+h2{font-size:clamp(22px,4vw,32px);font-weight:800;color:var(--primary);line-height:1.2;margin:48px 0 20px;padding-bottom:12px;border-bottom:2px solid var(--border)}
+h3{font-size:20px;font-weight:700;color:var(--accent);margin:28px 0 12px}
+h4{font-size:17px;font-weight:700;color:var(--primary);margin:20px 0 8px}
+p{color:var(--text-light);margin-bottom:20px;max-width:70ch;font-size:17px;line-height:1.8}
+.lead{font-size:20px;color:var(--text-light);margin-bottom:32px;max-width:800px;line-height:1.7}
+.breadcrumb{font-size:13px;color:var(--text-light);margin-bottom:24px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.breadcrumb a{color:var(--accent)}
+.toc{background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin:32px 0}
+.toc-title{font-weight:700;color:var(--primary);margin-bottom:12px;font-size:16px}
+.toc ol{margin:0;padding-left:20px}
+.toc li{margin-bottom:8px;font-size:15px;color:var(--text-light)}
+.toc a{color:var(--accent)}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;margin:16px 0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);transition:transform 0.3s,box-shadow 0.3s,border-color 0.3s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 24px -8px rgba(0,0,0,0.12);border-color:var(--accent)}
+.card-title{font-weight:700;color:var(--primary);margin-bottom:12px;font-size:17px;display:flex;align-items:center;gap:8px}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.price{font-size:28px;font-weight:800;color:var(--primary);margin:12px 0}
+.checklist{list-style:none;padding:0;margin:16px 0}
+.checklist li{padding-left:28px;position:relative;margin-bottom:10px;font-size:16px;color:var(--text-light);line-height:1.6}
+.checklist li.ok::before{content:"✅";position:absolute;left:0}
+.checklist li.no::before{content:"❌";position:absolute;left:0}
+.checklist li.tip::before{content:"💡";position:absolute;left:0}
+table{width:100%;border-collapse:collapse;margin:24px 0;background:white;border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);border:1px solid var(--border);font-size:15px}
+th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--bg-light);font-weight:700;color:var(--primary)}
+tr:last-child td{border-bottom:none}
+tr:hover{background:var(--bg-light)}
+.tip-box{padding:20px 24px;border-radius:var(--radius);margin:24px 0;border-left:4px solid var(--accent);background:#eff6ff}
+.tip-box.success{background:#f0fdf4;border-left-color:var(--success)}
+.tip-box.warning{background:#fffbeb;border-left-color:var(--star)}
+.tip-box.danger{background:#fef2f2;border-left-color:#dc2626}
+.tip-title{font-weight:700;color:var(--primary);margin-bottom:8px;font-size:15px}
+.tip-box p{margin:0;font-size:15px}
+.cta-block{background:linear-gradient(135deg,var(--tg) 0%,var(--tg-hover) 100%);color:#fff;padding:40px;border-radius:20px;text-align:center;margin:48px 0}
+.cta-block h3{color:#fff;font-size:26px;margin-bottom:12px}
+.cta-block p{color:rgba(255,255,255,0.9);margin-bottom:20px;max-width:600px;margin-left:auto;margin-right:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;padding:16px 32px;border-radius:var(--radius);font-weight:700;font-size:17px;transition:all 0.2s;min-height:54px;box-shadow:0 4px 6px rgba(37,99,235,0.25)}
+.btn:hover{background:var(--accent-hover);transform:translateY(-3px);box-shadow:0 10px 20px rgba(37,99,235,0.3);color:#fff}
+.btn-tg{background:var(--tg);box-shadow:0 4px 6px rgba(34,158,217,0.25)}
+.btn-tg:hover{background:var(--tg-hover)}
+.btn-white{background:#fff;color:var(--tg);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+.btn-white:hover{background:#f0f9ff;color:var(--tg-hover)}
+.author-box{background:var(--bg-light);border:1px solid var(--border);border-radius:16px;padding:28px;margin:48px 0;display:flex;align-items:center;gap:20px}
+.author-box img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0}
+.author-info h4{color:var(--primary);font-size:17px;margin-bottom:6px}
+.author-info p{margin:0;font-size:14px;color:var(--text-light)}
+.hero-badges{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.hero-badges span{background:#fff;padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;color:var(--text-light);font-weight:500}
+.related{background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:40px 0}
+.related h3{margin-top:0;color:var(--primary);font-size:17px}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+.related-link{display:block;padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--border);color:var(--primary);font-weight:600;font-size:14px;transition:0.2s}
+.related-link:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+@media(max-width:768px){.article-wrap{padding:20px 16px}.author-box{flex-direction:column;text-align:center}.grid{grid-template-columns:1fr}table{font-size:13px}th,td{padding:10px 12px}.cta-block{padding:28px 20px}}
+</style>"""
+
 SYSTEM_PROMPT = """Ты — профессиональный SEO-копирайтер. Пишешь статьи для блога seopi.ru.
 
 АВТОР: Александр Филимонов, SEO-эксперт, Санкт-Петербург, самозанятый (НПД).
@@ -333,11 +399,37 @@ SYSTEM_PROMPT = """Ты — профессиональный SEO-копирай�
 CTA: всегда добавляй блок со ссылкой https://t.me/seopi_seo_bot?start=audit
 
 ФОРМАТ ВЫВОДА: чистый HTML без DOCTYPE и html/body тегов.
-Структура:
-1. Мета-теги (title, description, canonical, og, twitter, schema.org)
-2. <style> блок (копируй стили из примера)
-3. <article class="article-content"> с полным контентом
-4. H1 → лид → оглавление → 5-7 H2 разделов → FAQ (4 вопроса) → CTA → автор
+
+ИСПОЛЬЗУЙ ТОЛЬКО ЭТИ CSS КЛАССЫ (они уже есть на сайте):
+- .article-wrap — обёртка статьи
+- .lead — лид-абзац
+- .breadcrumb — хлебные крошки
+- .toc — оглавление
+- .card и .card-title — карточки
+- .grid — сетка карточек
+- .checklist с li.ok / li.no / li.tip — чек-листы
+- table, th, td — таблицы
+- .tip-box / .tip-box.success / .tip-box.warning / .tip-box.danger — блоки советов
+- .cta-block с .btn-white — CTA блок
+- .author-box — блок автора
+- .hero-badges — бейджи
+- .related и .related-grid — похожие статьи
+- .btn / .btn-tg — кнопки
+
+Структура HTML:
+1. Мета-теги (title, description, canonical, og, twitter, robots)
+2. Schema.org JSON-LD (Article + FAQPage + BreadcrumbList)
+3. <div class="article-wrap">
+   - .breadcrumb хлебные крошки
+   - <h1> заголовок
+   - <p class="lead"> лид
+   - .hero-badges бейджи (договор НПД, 152-ФЗ, без серых схем)
+   - .toc оглавление
+   - 5-7 разделов H2 с контентом (.card, table, .checklist, .tip-box)
+   - .cta-block с кнопкой в Telegram
+   - FAQ секция (4 вопроса)
+   - .related похожие статьи
+   - .author-box блок автора
 
 ДЛИНА: 2500-3500 слов.
 
@@ -385,6 +477,10 @@ async def generate_article(topic: str, article_type: str = "weekly") -> str:
     
     user_prompt = f"""Напиши SEO-статью для блога seopi.ru.
 
+ИСПОЛЬЗУЙ СТРОГО ЭТОТ CSS (уже подключён на сайте, не меняй классы):
+{ARTICLE_CSS}
+
+
 ТЕМА: {topic}
 ТИП: {type_label}
 URL СТАТЬИ: https://seopi.ru/{topic.lower().replace(' ', '-').replace('/', '-')}/
@@ -413,7 +509,11 @@ URL СТАТЬИ: https://seopi.ru/{topic.lower().replace(' ', '-').replace('/',
                 ],
                 max_tokens=8000
             ))
-            return response.choices[0].message.content
+            article_html = response.choices[0].message.content
+            # Если CSS не включён в ответ — добавляем
+            if "<style>" not in article_html:
+                article_html = ARTICLE_CSS + "\n" + article_html
+            return article_html
     except Exception as e:
         return f"Зона верификации генерации: {str(e)}"
 
