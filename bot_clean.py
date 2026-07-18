@@ -251,6 +251,81 @@ async def audit_back(call: types.CallbackQuery):
     await call.message.answer("📋 Список проверок:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
 
+@dp.callback_query(lambda c: c.data and c.data.startswith("post_go|"))
+async def post_go(call: types.CallbackQuery):
+    if str(call.from_user.id) != "8335951518":
+        return
+    await call.answer()
+    uid = str(call.from_user.id)
+    topic = audit_data.get("post_topic_" + uid, "")
+    if not topic:
+        await call.message.answer("Тема не найдена. Введите /post")
+        return
+    await call.message.answer("🔍 Проверяю дубли на сайте...")
+    from post_module import check_duplicate, generate_article
+    dup = await check_duplicate(topic)
+    if dup.get("duplicate"):
+        exact = [s for s in dup["similar"] if s["match"] == "exact"]
+        msg = "❌ Точный дубль найден:\n\n"
+        for s in exact:
+            msg += "📄 " + s["title"] + "\n" + s["url"] + "\n"
+        msg += "\nВведите /post для другой темы."
+        await call.message.answer(msg)
+        return
+    await call.message.answer("✅ Дублей нет. Генерирую статью...\n⏳ Подождите 60-90 секунд.")
+    art_type = audit_data.get("post_type_" + uid, "weekly")
+    html = await generate_article(topic, art_type)
+    audit_data["post_draft_" + uid] = html
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Опубликовать", callback_data="post_publish|publish")],
+        [InlineKeyboardButton(text="🔍 В черновик", callback_data="post_publish|draft")],
+        [InlineKeyboardButton(text="🔄 Переписать", callback_data="post_rewrite")],
+        [InlineKeyboardButton(text="❌ Отмена", callback_data="post_cancel")],
+    ])
+    await call.message.answer(
+        "✅ Статья готова!\n"
+        "📝 Тема: " + topic + "\n"
+        "📏 Размер: " + str(len(html)) + " символов\n\n" +
+        html[:400] + "...",
+        reply_markup=kb
+    )
+
+@dp.callback_query(lambda c: c.data == "post_another")
+async def post_another(call: types.CallbackQuery):
+    if str(call.from_user.id) != "8335951518":
+        return
+    await call.answer()
+    uid = str(call.from_user.id)
+    auto_topic, auto_type = get_auto_topic()
+    audit_data["post_topic_" + uid] = auto_topic
+    audit_data["post_type_" + uid] = auto_type
+    type_labels = {
+        "weekly": "📅 Еженедельная (LSI)",
+        "biweekly": "📊 Раз в 2 недели (Кейс)",
+        "monthly": "🏛 Раз в месяц (Pillar)"
+    }
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Писать эту тему", callback_data="post_go|" + auto_type)],
+        [InlineKeyboardButton(text="🔄 Другую тему", callback_data="post_another")],
+        [InlineKeyboardButton(text="✏️ Ввести свою тему", callback_data="post_custom")],
+    ])
+    await call.message.answer(
+        "Тип: " + type_labels.get(auto_type, "") + "\n\n"
+        "Другая тема:\n"
+        "📌 <b>" + auto_topic + "</b>\n\n"
+        "Писать эту статью?",
+        reply_markup=kb,
+        parse_mode="HTML"
+    )
+
+@dp.callback_query(lambda c: c.data == "post_custom")
+async def post_custom(call: types.CallbackQuery):
+    if str(call.from_user.id) != "8335951518":
+        return
+    await call.answer()
+    audit_data["waiting_post_" + str(call.from_user.id)] = True
+    await call.message.answer("✏️ Введите свою тему статьи:")
+
 @dp.message(Command("speed"))
 async def cmd_speed(message: types.Message):
     args = message.text.split()
@@ -272,23 +347,92 @@ async def cmd_speed(message: types.Message):
     await send_long(message, format_pagespeed_report(result_d))
 
 
+# Контент-план — темы по типам
+CONTENT_PLAN = {
+    "weekly": [
+        "Как настроить Title и Description для роста CTR на 30%",
+        "Внутренняя перелинковка: как правильно расставить ссылки",
+        "Alt-теги для изображений: почему теряете трафик из картинок",
+        "H1 и H2 заголовки: как структурировать страницу для Яндекса",
+        "Robots.txt и Sitemap: базовая настройка за 15 минут",
+        "Canonical: как избавиться от дублей страниц",
+        "Open Graph: как ваши ссылки выглядят в соцсетях",
+        "Микроразметка Schema.org: расширенные сниппеты в поиске",
+        "Favicon и Viewport: мелочи которые влияют на доверие",
+        "HTTP статус 200: как проверить и исправить зоны роста",
+    ],
+    "biweekly": [
+        "Кейс: рост трафика интернет-магазина автозапчастей на 150% за 2 месяца",
+        "Кейс: как юридическая фирма увеличила заявки в 2.3 раза через SEO",
+        "Технический регламент: SEO-аудит сайта за 30 минут",
+        "Чек-лист: 50 параметров технического SEO для малого бизнеса",
+        "Кейс: блог о путешествиях — рост трафика в 3 раза за 4 месяца",
+    ],
+    "monthly": [
+        "Полное руководство по техническому SEO-аудиту 2026",
+        "SEO для малого бизнеса: стратегия с нуля до результата",
+        "Core Web Vitals: полный гайд по оптимизации скорости сайта",
+        "Семантическое ядро: как собрать и кластеризовать за 1 день",
+        "E-E-A-T факторы: как повысить авторитетность сайта в 2026",
+    ],
+}
+
+import datetime
+import random
+
+def get_auto_topic() -> tuple:
+    """Автоматически выбирает тему по контент-плану."""
+    day = datetime.date.today().day
+    week = datetime.date.today().isocalendar()[1]
+    
+    # Раз в месяц — Pillar (1-5 числа)
+    if day <= 5:
+        topics = CONTENT_PLAN["monthly"]
+        article_type = "monthly"
+    # Раз в 2 недели — Кейс (чётные недели, 10-15 числа)
+    elif day >= 10 and day <= 15 and week % 2 == 0:
+        topics = CONTENT_PLAN["biweekly"]
+        article_type = "biweekly"
+    # Еженедельно — LSI
+    else:
+        topics = CONTENT_PLAN["weekly"]
+        article_type = "weekly"
+    
+    topic = random.choice(topics)
+    return topic, article_type
+
 @dp.message(Command("post"))
 async def cmd_post(message: types.Message):
     if str(message.from_user.id) != "8335951518":
         return
     args = message.text.split(maxsplit=1)
+    
     if len(args) < 2:
+        # Автовыбор темы
+        auto_topic, auto_type = get_auto_topic()
+        type_labels = {
+            "weekly": "📅 Еженедельная (LSI)",
+            "biweekly": "📊 Раз в 2 недели (Кейс)",
+            "monthly": "🏛 Раз в месяц (Pillar)"
+        }
+        audit_data["post_topic_" + str(message.from_user.id)] = auto_topic
+        audit_data["post_type_" + str(message.from_user.id)] = auto_type
         kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📅 Еженедельная (LSI)", callback_data="post_type|weekly")],
-            [InlineKeyboardButton(text="📊 Раз в 2 недели (Кейс)", callback_data="post_type|biweekly")],
-            [InlineKeyboardButton(text="🏛 Раз в месяц (Pillar)", callback_data="post_type|monthly")],
+            [InlineKeyboardButton(text="✅ Писать эту тему", callback_data="post_go|" + auto_type)],
+            [InlineKeyboardButton(text="🔄 Другую тему", callback_data="post_another")],
+            [InlineKeyboardButton(text="✏️ Ввести свою тему", callback_data="post_custom")],
         ])
         await message.answer(
-            "📝 Автопубликация статьи в WordPress\n\n"
-            "Выберите тип статьи:",
-            reply_markup=kb
+            "📝 Автопубликация статьи\n\n"
+            "Тип: " + type_labels.get(auto_type, "") + "\n\n"
+            "Предлагаю тему:\n"
+            "📌 <b>" + auto_topic + "</b>\n\n"
+            "Писать эту статью?",
+            reply_markup=kb,
+            parse_mode="HTML"
         )
         return
+    
     topic = args[1]
     audit_data["post_topic_" + str(message.from_user.id)] = topic
     
@@ -435,6 +579,33 @@ async def post_cancel(call: types.CallbackQuery):
 async def free_text(message: types.Message):
     uid = str(message.from_user.id)
     # Ожидание URL для аудита
+    # Ожидание темы статьи
+    pkey2 = "waiting_post_" + uid
+    if pkey2 in audit_data:
+        del audit_data[pkey2]
+        topic = message.text.strip()
+        audit_data["post_topic_" + uid] = topic
+        audit_data["post_type_" + uid] = "weekly"
+        await message.answer("🔍 Проверяю дубли...")
+        from post_module import check_duplicate, generate_article
+        dup = await check_duplicate(topic)
+        if dup.get("duplicate"):
+            await message.answer("❌ Дубль найден. Введите другую тему.")
+            return
+        await message.answer("✅ Дублей нет. Генерирую...\n⏳ 60-90 секунд.")
+        html = await generate_article(topic, "weekly")
+        audit_data["post_draft_" + uid] = html
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Опубликовать", callback_data="post_publish|publish")],
+            [InlineKeyboardButton(text="🔍 В черновик", callback_data="post_publish|draft")],
+            [InlineKeyboardButton(text="🔄 Переписать", callback_data="post_rewrite")],
+        ])
+        await message.answer(
+            "✅ Готово! " + str(len(html)) + " символов\n\n" + html[:400] + "...",
+            reply_markup=kb
+        )
+        return
+
     # Ожидание URL для проверки скорости
     skey = "waiting_speed_" + uid
     if skey in audit_data:
