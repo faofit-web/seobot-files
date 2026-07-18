@@ -315,69 +315,98 @@ ARTICLE_TYPES = {
 }
 
 ARTICLE_CSS = """<style>
-:root{--primary:#0f172a;--accent:#2563eb;--accent-hover:#1d4ed8;--bg-light:#f8fafc;--text-main:#334155;--text-light:#64748b;--success:#10b981;--tg:#229ED9;--tg-hover:#1c86b8;--star:#f59e0b;--border:#e2e8f0;--radius:12px}
+:root{
+  --primary:#0f172a;--accent:#2563eb;--accent-h:#1d4ed8;
+  --green:#10b981;--tg:#229ED9;--tg-h:#1a86b8;
+  --amber:#f59e0b;--red:#ef4444;
+  --bg:#ffffff;--bg-soft:#f8fafc;--bg-blue:#eff6ff;
+  --text:#334155;--muted:#64748b;--border:#e2e8f0;
+  --r:14px;--r-sm:8px;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:var(--text-main);font-size:18px;background:#fff;-webkit-text-size-adjust:100%}
-a{text-decoration:none;color:var(--accent);transition:0.2s}
-a:hover{color:var(--accent-hover)}
-ul{list-style:none}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:17px;line-height:1.75;-webkit-text-size-adjust:100%}
+a{color:var(--accent);text-decoration:none;transition:.2s}
+a:hover{color:var(--accent-h);text-decoration:underline}
 img{max-width:100%;height:auto;display:block}
-.article-wrap{max-width:860px;margin:0 auto;padding:40px 20px}
-h1{font-size:clamp(28px,5vw,42px);font-weight:800;color:var(--primary);line-height:1.2;letter-spacing:-0.02em;margin-bottom:20px}
-h2{font-size:clamp(22px,4vw,32px);font-weight:800;color:var(--primary);line-height:1.2;margin:48px 0 20px;padding-bottom:12px;border-bottom:2px solid var(--border)}
-h3{font-size:20px;font-weight:700;color:var(--accent);margin:28px 0 12px}
-h4{font-size:17px;font-weight:700;color:var(--primary);margin:20px 0 8px}
-p{color:var(--text-light);margin-bottom:20px;max-width:70ch;font-size:17px;line-height:1.8}
-.lead{font-size:20px;color:var(--text-light);margin-bottom:32px;max-width:800px;line-height:1.7}
-.breadcrumb{font-size:13px;color:var(--text-light);margin-bottom:24px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-.breadcrumb a{color:var(--accent)}
-.toc{background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin:32px 0}
-.toc-title{font-weight:700;color:var(--primary);margin-bottom:12px;font-size:16px}
-.toc ol{margin:0;padding-left:20px}
-.toc li{margin-bottom:8px;font-size:15px;color:var(--text-light)}
+.aw{max-width:820px;margin:0 auto;padding:48px 20px 64px}
+h1{font-size:clamp(26px,5vw,40px);font-weight:800;color:var(--primary);line-height:1.15;letter-spacing:-.02em;margin-bottom:18px}
+h2{font-size:clamp(20px,4vw,28px);font-weight:800;color:var(--primary);line-height:1.2;margin:52px 0 18px;padding-bottom:10px;border-bottom:2px solid var(--border)}
+h3{font-size:18px;font-weight:700;color:var(--accent);margin:28px 0 10px}
+p{color:var(--muted);margin-bottom:18px;max-width:68ch;line-height:1.8}
+.lead{font-size:19px;color:var(--text);line-height:1.7;margin-bottom:28px;max-width:72ch}
+strong{color:var(--primary);font-weight:600}
+.bc{font-size:13px;color:var(--muted);margin-bottom:20px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bc a{color:var(--accent)}
+.bc span{opacity:.5}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 28px}
+.badge{background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-size:13px;color:var(--muted);font-weight:500;white-space:nowrap}
+.toc{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;margin:28px 0}
+.toc-h{font-weight:700;color:var(--primary);font-size:15px;margin-bottom:10px}
+.toc ol{margin:0;padding-left:18px}
+.toc li{margin-bottom:6px;font-size:14px;color:var(--muted)}
 .toc a{color:var(--accent)}
-.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;margin:16px 0;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);transition:transform 0.3s,box-shadow 0.3s,border-color 0.3s;display:flex;flex-direction:column}
-.card:hover{transform:translateY(-4px);box-shadow:0 12px 24px -8px rgba(0,0,0,0.12);border-color:var(--accent)}
-.card-title{font-weight:700;color:var(--primary);margin-bottom:12px;font-size:17px;display:flex;align-items:center;gap:8px}
-.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-.price{font-size:28px;font-weight:800;color:var(--primary);margin:12px 0}
-.checklist{list-style:none;padding:0;margin:16px 0}
-.checklist li{padding-left:28px;position:relative;margin-bottom:10px;font-size:16px;color:var(--text-light);line-height:1.6}
-.checklist li.ok::before{content:"✅";position:absolute;left:0}
-.checklist li.no::before{content:"❌";position:absolute;left:0}
-.checklist li.tip::before{content:"💡";position:absolute;left:0}
-table{width:100%;border-collapse:collapse;margin:24px 0;background:white;border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05);border:1px solid var(--border);font-size:15px}
-th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--border)}
-th{background:var(--bg-light);font-weight:700;color:var(--primary)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:20px 0}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:22px 20px;transition:box-shadow .25s,border-color .25s,transform .25s}
+.card:hover{box-shadow:0 8px 24px rgba(0,0,0,.09);border-color:var(--accent);transform:translateY(-3px)}
+.card-icon{font-size:28px;margin-bottom:10px}
+.card-title{font-weight:700;color:var(--primary);font-size:16px;margin-bottom:8px}
+.card p{font-size:14px;margin:0}
+.card-blue{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-color:#bfdbfe}
+.card-green{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#bbf7d0}
+.card-amber{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-color:#fde68a}
+.card-purple{background:linear-gradient(135deg,#faf5ff,#ede9fe);border-color:#ddd6fe}
+.cl{list-style:none;padding:0;margin:14px 0}
+.cl li{padding:6px 0 6px 30px;position:relative;font-size:15px;color:var(--muted);line-height:1.6}
+.cl li+li{border-top:1px solid var(--border)}
+.cl li.ok::before{content:"✅";position:absolute;left:0}
+.cl li.no::before{content:"❌";position:absolute;left:0}
+.cl li.tip::before{content:"💡";position:absolute;left:0}
+.cl li.arr::before{content:"→";position:absolute;left:0;color:var(--accent);font-weight:700}
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:15px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+th{background:var(--bg-soft);font-weight:700;color:var(--primary);padding:12px 16px;text-align:left;border-bottom:2px solid var(--border)}
+td{padding:11px 16px;border-bottom:1px solid var(--border);color:var(--muted)}
 tr:last-child td{border-bottom:none}
-tr:hover{background:var(--bg-light)}
-.tip-box{padding:20px 24px;border-radius:var(--radius);margin:24px 0;border-left:4px solid var(--accent);background:#eff6ff}
-.tip-box.success{background:#f0fdf4;border-left-color:var(--success)}
-.tip-box.warning{background:#fffbeb;border-left-color:var(--star)}
-.tip-box.danger{background:#fef2f2;border-left-color:#dc2626}
-.tip-title{font-weight:700;color:var(--primary);margin-bottom:8px;font-size:15px}
-.tip-box p{margin:0;font-size:15px}
-.cta-block{background:linear-gradient(135deg,var(--tg) 0%,var(--tg-hover) 100%);color:#fff;padding:40px;border-radius:20px;text-align:center;margin:48px 0}
-.cta-block h3{color:#fff;font-size:26px;margin-bottom:12px}
-.cta-block p{color:rgba(255,255,255,0.9);margin-bottom:20px;max-width:600px;margin-left:auto;margin-right:auto}
-.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;padding:16px 32px;border-radius:var(--radius);font-weight:700;font-size:17px;transition:all 0.2s;min-height:54px;box-shadow:0 4px 6px rgba(37,99,235,0.25)}
-.btn:hover{background:var(--accent-hover);transform:translateY(-3px);box-shadow:0 10px 20px rgba(37,99,235,0.3);color:#fff}
-.btn-tg{background:var(--tg);box-shadow:0 4px 6px rgba(34,158,217,0.25)}
-.btn-tg:hover{background:var(--tg-hover)}
-.btn-white{background:#fff;color:var(--tg);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
-.btn-white:hover{background:#f0f9ff;color:var(--tg-hover)}
-.author-box{background:var(--bg-light);border:1px solid var(--border);border-radius:16px;padding:28px;margin:48px 0;display:flex;align-items:center;gap:20px}
-.author-box img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0}
-.author-info h4{color:var(--primary);font-size:17px;margin-bottom:6px}
-.author-info p{margin:0;font-size:14px;color:var(--text-light)}
-.hero-badges{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
-.hero-badges span{background:#fff;padding:6px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;color:var(--text-light);font-weight:500}
-.related{background:var(--bg-light);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:40px 0}
-.related h3{margin-top:0;color:var(--primary);font-size:17px}
-.related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
-.related-link{display:block;padding:14px 16px;background:#fff;border-radius:10px;border:1px solid var(--border);color:var(--primary);font-weight:600;font-size:14px;transition:0.2s}
-.related-link:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 4px 12px rgba(0,0,0,.05)}
-@media(max-width:768px){.article-wrap{padding:20px 16px}.author-box{flex-direction:column;text-align:center}.grid{grid-template-columns:1fr}table{font-size:13px}th,td{padding:10px 12px}.cta-block{padding:28px 20px}}
+tr:nth-child(even){background:var(--bg-soft)}
+.box{padding:18px 20px;border-radius:var(--r);margin:20px 0;border-left:4px solid var(--accent);background:var(--bg-blue)}
+.box.ok{background:#f0fdf4;border-color:var(--green)}
+.box.warn{background:#fffbeb;border-color:var(--amber)}
+.box.err{background:#fef2f2;border-color:var(--red)}
+.box-title{font-weight:700;color:var(--primary);margin-bottom:6px;font-size:15px}
+.box p{margin:0;font-size:15px}
+.cta{background:linear-gradient(135deg,var(--tg) 0%,var(--tg-h) 100%);border-radius:20px;padding:36px 32px;text-align:center;margin:48px 0}
+.cta h3{color:#fff;font-size:22px;margin-bottom:10px}
+.cta p{color:rgba(255,255,255,.9);margin:0 auto 20px;max-width:560px;font-size:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 28px;border-radius:50px;font-weight:700;font-size:16px;transition:.2s}
+.btn-white{background:#fff;color:var(--tg)}
+.btn-white:hover{background:#f0f9ff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.15);text-decoration:none}
+.cta-note{font-size:12px;color:rgba(255,255,255,.7);margin-top:12px}
+.cta-note a{color:rgba(255,255,255,.9)}
+.faq{margin:40px 0}
+.faq-item{border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:10px;overflow:hidden}
+.faq-q{padding:16px 20px;font-weight:700;color:var(--primary);font-size:15px;background:var(--bg-soft)}
+.faq-a{padding:12px 20px 16px;font-size:15px;color:var(--muted);line-height:1.7}
+.author{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin:48px 0;display:flex;align-items:center;gap:18px}
+.author img{width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0}
+.author-name{font-weight:700;color:var(--primary);font-size:15px;margin-bottom:4px}
+.author p{font-size:13px;margin:0}
+.related{margin:36px 0}
+.related-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.related-grid{display:flex;flex-wrap:wrap;gap:8px}
+.rel-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--bg-soft);border-radius:20px;border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:500;transition:.2s;white-space:nowrap}
+.rel-link::before{content:"→";color:var(--accent);font-size:12px}
+.rel-link:hover{background:var(--bg-blue);border-color:var(--accent);color:var(--accent);text-decoration:none;transform:translateY(-1px)}
+@media(max-width:480px){.related-grid{flex-direction:column}.rel-link{white-space:normal}}
+@media(max-width:768px){
+  .aw{padding:20px 16px 48px}
+  .grid{grid-template-columns:1fr}
+  .author{flex-direction:column;text-align:center}
+  table{font-size:13px}
+  th,td{padding:9px 12px}
+  .cta{padding:24px 18px}
+  h2{margin-top:36px}
+  .related-grid{grid-template-columns:1fr}
+}
 </style>"""
 
 SYSTEM_PROMPT = """Ты — профессиональный SEO-копирайтер. Пишешь статьи для блога seopi.ru.
@@ -400,36 +429,51 @@ CTA: всегда добавляй блок со ссылкой https://t.me/seo
 
 ФОРМАТ ВЫВОДА: чистый HTML без DOCTYPE и html/body тегов.
 
-ИСПОЛЬЗУЙ ТОЛЬКО ЭТИ CSS КЛАССЫ (они уже есть на сайте):
-- .article-wrap — обёртка статьи
+ИСПОЛЬЗУЙ ТОЛЬКО ЭТИ CSS КЛАССЫ:
+- .aw — обёртка статьи (НЕ article-wrap)
 - .lead — лид-абзац
-- .breadcrumb — хлебные крошки
-- .toc — оглавление
-- .card и .card-title — карточки
+- .bc — хлебные крошки (НЕ breadcrumb)
+- .badges и .badge — бейджи
+- .toc и .toc-h — оглавление
 - .grid — сетка карточек
-- .checklist с li.ok / li.no / li.tip — чек-листы
+- .card + .card-icon + .card-title — карточки
+- .card-blue / .card-green / .card-amber / .card-purple — цветные карточки
+- .cl с li.ok / li.no / li.tip / li.arr — чек-листы
 - table, th, td — таблицы
-- .tip-box / .tip-box.success / .tip-box.warning / .tip-box.danger — блоки советов
-- .cta-block с .btn-white — CTA блок
-- .author-box — блок автора
-- .hero-badges — бейджи
-- .related и .related-grid — похожие статьи
-- .btn / .btn-tg — кнопки
+- .box / .box.ok / .box.warn / .box.err + .box-title — блоки советов
+- .cta с .btn .btn-white — CTA блок
+- .cta-note — подпись под CTA
+- .faq + .faq-item + .faq-q + .faq-a — аккордеон FAQ
+- .author + .author-name — блок автора
+- .related + .related-grid + .rel-link — похожие статьи
 
 Структура HTML:
 1. Мета-теги (title, description, canonical, og, twitter, robots)
 2. Schema.org JSON-LD (Article + FAQPage + BreadcrumbList)
-3. <div class="article-wrap">
-   - .breadcrumb хлебные крошки
-   - <h1> заголовок
-   - <p class="lead"> лид
-   - .hero-badges бейджи (договор НПД, 152-ФЗ, без серых схем)
-   - .toc оглавление
-   - 5-7 разделов H2 с контентом (.card, table, .checklist, .tip-box)
-   - .cta-block с кнопкой в Telegram
-   - FAQ секция (4 вопроса)
-   - .related похожие статьи
-   - .author-box блок автора
+3. <div class="aw">
+   - <nav class="bc"> хлебные крошки
+   - <h1> заголовок (только ОДИН в начале статьи)
+   - <p class="lead"> лид (2-3 предложения)
+   - <div class="badges"> бейджи: 📄 Договор НПД / 🛡 152-ФЗ / ✅ Без серых схем / 🤖 Аудит за 30 сек
+   - <div class="toc"> оглавление
+   - 5-7 разделов H2 с контентом (.card с цветами, table, .cl, .box)
+   - <div class="cta"> CTA блок (БЕЗ заголовка H2/H3 перед ним — только сам блок)
+   - <div class="faq"> 4 вопроса (НЕ добавлять H2 "Итог" или "Заключение" после FAQ)
+   - <div class="related"> компактные ссылки в виде пилюль:
+     <div class="related">
+       <div class="related-title">Полезные материалы</div>
+       <div class="related-grid">
+         <a href="URL" class="rel-link">Название статьи</a>
+         ... (3-4 ссылки максимум)
+       </div>
+     </div>
+
+ВАЖНО: НЕ добавлять в конце статьи:
+- Большие заголовки H2/H3 типа "Итог", "Заключение", "Вывод", "Резюме"
+- Повторный призыв к действию после .cta блока
+- Блок .author (автор статьи) — не добавлять совсем
+- Дополнительные блоки после .related
+Статья заканчивается на блоке .related
 
 ДЛИНА: 2500-3500 слов.
 
@@ -452,12 +496,15 @@ CTA: всегда добавляй блок со ссылкой https://t.me/seo
 3. УНИКАЛЬНОСТЬ — пиши оригинальный текст, не копируй формулировки из других статей.
    Используй реальные цифры, кейсы из российского SEO-рынка 2025-2026.
 
-4. ФОРМА ОБРАТНОЙ СВЯЗИ (152-ФЗ) — в CTA блоке обязательно добавь:
-   <p style="font-size:0.85rem;color:#64748b;margin-top:12px;">
-   Нажимая кнопку, вы соглашаетесь с 
-   <a href="https://seopi.ru/politika-konfidenczialnosti/">политикой обработки персональных данных (152-ФЗ)</a>.
-   Исполнитель: Александр Филимонов, самозанятый (НПД), ИНН 463403817128.
-   </p>
+4. CTA БЛОК — используй класс .cta с кнопкой .btn-white:
+   <div class="cta">
+     <h3>Проверьте ваш сайт прямо сейчас</h3>
+     <p>Бесплатная проверка 15 параметров за 30 секунд. Без регистрации.</p>
+     <a href="https://t.me/seopi_seo_bot?start=audit" class="btn btn-white">🤖 Запустить бесплатный аудит</a>
+     <p class="cta-note">Исполнитель: Александр Филимонов (Самозанятый, НПД) · 
+     <a href="https://seopi.ru/politika-konfidenczialnosti/">152-ФЗ</a></p>
+   </div>
+   НЕ добавляй текст "Получите бесплатный SEO-аудит вашего сайта" отдельно от CTA блока.
 
 5. ВНУТРЕННЯЯ ПЕРЕЛИНКОВКА — обязательно включи ссылки на коммерческие страницы:
    - https://seopi.ru/prajs-list/ — страница цен (анкор: «стоимость SEO-аудита», «цены на продвижение»)
