@@ -37,17 +37,60 @@ async def send_long(message, text):
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
-    await message.answer(
-        "Система Seo активирована.\n\n"
-        "Команды:\n"
-        "/lending — продающая страница\n"
-        "/statya — SEO-статья\n"
-        "/audit — SEO-аудит сайта\n"
-        "/semantika — семантика\n"
-        "/otchet — отчёт было/стало\n"
-        "/new — сбросить контекст\n\n"
-        "Или напишите задачу свободным текстом."
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    args = message.text.split()
+    # Если пришёл с сайта через ?start=audit
+    if len(args) > 1 and args[1] == "audit":
+        audit_data["waiting_url_" + str(message.from_user.id)] = True
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Проверить страницу — бесплатно", callback_data="hint_page")],
+            [InlineKeyboardButton(text="🌐 Весь сайт — 4 900 ₽", callback_data="hint_site")],
+        ])
+        await message.answer(
+            "👋 Привет! Я SEO-бот Александра Филимонова.\n\n"
+            "🔍 Проверю ваш сайт по 15 параметрам и покажу что мешает получать клиентов из поиска.\n\n"
+            "Выберите тариф:\n"
+            "✅ Проверка страницы — бесплатно\n"
+            "🌐 Весь сайт (до 50 стр.) — 4 900 ₽\n"
+            "🛠 Детальный отчёт по проблеме — 90 ₽\n\n"
+            "Введите адрес вашего сайта:",
+            reply_markup=kb
+        )
+        return
+    # Обычный старт — для Александра (полное меню)
+    if str(message.from_user.id) == "8335951518":
+        await message.answer(
+            "Система Seo активирована.\n\n"
+            "Команды:\n"
+            "/lending — продающая страница\n"
+            "/statya — SEO-статья\n"
+            "/audit — SEO-аудит сайта\n"
+            "/semantika — семантика\n"
+            "/otchet — отчёт было/стало\n"
+            "/new — сбросить контекст\n\n"
+            "Или напишите задачу свободным текстом."
+        )
+    else:
+        # Для клиентов — только аудит
+        await message.answer(
+            "👋 Привет! Я SEO-бот Александра Филимонова.\n\n"
+            "🔍 Проверю ваш сайт по 15 параметрам за 30 секунд и покажу что мешает получать клиентов из поиска.\n\n"
+            "Тарифы:\n"
+            "📄 Одна страница — 490 ₽\n"
+            "🌐 Весь сайт (до 50 стр.) — 4 900 ₽\n"
+            "🛠 Отчёт по одной проблеме — 100-300 ₽\n\n"
+            "Напишите /audit чтобы начать проверку.\n\n"
+            "По всем вопросам: @Aleksseopiru"
+        )
+
+@dp.callback_query(lambda c: c.data and c.data.startswith("hint_"))
+async def audit_hint(call: types.CallbackQuery):
+    await call.answer()
+    await call.message.answer(
+        "Введите адрес вашего сайта в чат\n"
+        "Например: https://seopi.ru"
     )
+    audit_data["waiting_url_" + str(call.from_user.id)] = True
 
 @dp.message(Command("new"))
 async def cmd_new(message: types.Message):
@@ -76,22 +119,35 @@ async def cmd_otchet(message: types.Message):
 @dp.message(Command("audit"))
 async def cmd_audit(message: types.Message):
     args = message.text.split()
-    if len(args) < 3 or args[1] != "2244":
+    if len(args) < 2 or args[1] != "2244":
         await message.answer(
-            "Формат: /audit 2244 https://site.ru\n\n"
+            "Формат: /audit 2244\n\n"
+            "Тарифы:\n"
+            "✅ Проверка страницы — бесплатно\n"
+            "🌐 Весь сайт до 50 стр. — 4 900 ₽\n"
+            "🛠 Отчёт по проблеме — 90 ₽"
+        )
+        return
+    # Если URL уже передан в команде
+    if len(args) >= 3:
+        url = args[2]
+        if not url.startswith("http"):
+            url = "https://" + url
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Проверить страницу — бесплатно", callback_data="ap|" + url)],
+            [InlineKeyboardButton(text="🌐 Весь сайт — 4 900 ₽", callback_data="as|" + url)],
+        ])
+        await message.answer("🔍 Что проверяем на " + url + "?", reply_markup=kb)
+    else:
+        # Спросить адрес сайта
+        audit_data["waiting_url_" + str(message.from_user.id)] = True
+        await message.answer(
+            "🔍 Введите адрес сайта для аудита\n\n"
+            "Например: https://seopi.ru\n\n"
             "Тарифы:\n"
             "📄 Одна страница — 490 ₽\n"
             "🌐 Весь сайт до 50 стр. — 4 900 ₽"
         )
-        return
-    url = args[2]
-    if not url.startswith("http"):
-        url = "https://" + url
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📄 Одна страница — 490 ₽", callback_data="ap|" + url)],
-        [InlineKeyboardButton(text="🌐 Весь сайт — 4 900 ₽", callback_data="as|" + url)],
-    ])
-    await message.answer("🔍 Что проверяем на " + url + "?", reply_markup=kb)
 
 @dp.callback_query(lambda c: c.data and (c.data.startswith("ap|") or c.data.startswith("as|")))
 async def audit_start(call: types.CallbackQuery):
@@ -153,11 +209,11 @@ async def audit_item(call: types.CallbackQuery):
         "💡 Что даст исправление:\n" + instr["result"] + "\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "Хотите пошаговую инструкцию по исправлению?\n"
-        "Стоимость: " + str(price) + " ₽ — отчёт придёт на почту."
+        "Стоимость: 90 ₽ — пошаговый отчёт придёт на вашу почту."
     )
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="💳 Получить инструкцию — " + str(price) + " ₽",
+            text="🛠 Получить инструкцию — 90 ₽",
             callback_data="pay|" + uid + "|" + check_name + "|" + str(price)
         )],
         [InlineKeyboardButton(text="◀️ Назад к списку", callback_data="bk|" + uid)],
@@ -197,6 +253,23 @@ async def audit_back(call: types.CallbackQuery):
 @dp.message()
 async def free_text(message: types.Message):
     uid = str(message.from_user.id)
+    # Ожидание URL для аудита
+    wkey = "waiting_url_" + uid
+    if wkey in audit_data:
+        del audit_data[wkey]
+        url = message.text.strip()
+        if not url.startswith("http"):
+            url = "https://" + url
+        if "." not in url:
+            await message.answer("Введите корректный адрес сайта, например: https://seopi.ru")
+            audit_data[wkey] = True
+            return
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Проверить страницу — бесплатно", callback_data="ap|" + url)],
+            [InlineKeyboardButton(text="🌐 Весь сайт — 4 900 ₽", callback_data="as|" + url)],
+        ])
+        await message.answer("🔍 Что проверяем на " + url + "?", reply_markup=kb)
+        return
     pkey = "pending_" + uid
     if pkey in audit_data:
         email = message.text.strip()
@@ -219,11 +292,11 @@ async def free_text(message: types.Message):
                 pay_url = p.confirmation.confirmation_url
                 audit_data["pay_" + p.id] = {"email": email, "check_name": check_name, "url": url}
                 kb = InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="💳 Оплатить " + str(price) + " ₽", url=pay_url)]
+                    [InlineKeyboardButton(text="💳 Оплатить 90 ₽", url=pay_url)]
                 ])
                 await message.answer(
                     "✅ Email принят: " + email + "\n\n"
-                    "После оплаты " + str(price) + " ₽ отчёт придёт автоматически.\n"
+                    "После оплаты 90 ₽ отчёт придёт автоматически.\n"
                     "Исполнитель: Александр Филимонов (Самозанятый, НПД).\n"
                     "Персональные данные обрабатываются по 152-ФЗ.",
                     reply_markup=kb
@@ -232,7 +305,7 @@ async def free_text(message: types.Message):
                     from audit_v2 import get_instruction
                     from mailer import send_report
                     instr = get_instruction(check_name)
-                    sent = await send_report(email, url, check_name, instr)
+                    sent = await send_report(email, url, check_name, instr, price)
                     if sent:
                         await message.answer("📧 Отчёт отправлен на " + email + "\nПроверьте папку Входящие и Спам.")
                     else:
