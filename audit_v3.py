@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -20,6 +21,7 @@ CHECKS_META = {
     "Favicon":           {"price": 90},
     "Viewport":          {"price": 90},
     "HTTP статус 200":   {"price": 90},
+    "Скорость (PageSpeed)": {"price": 90},
 }
 
 INSTRUCTIONS = {
@@ -135,6 +137,14 @@ INSTRUCTIONS = {
         "result": "Исправление статуса страницы восстанавливает её в поисковом индексе и возвращает потерянный трафик.",
         "metrics": ["Возврат в индекс", "Восстановление трафика", "Нет ошибок сканирования"],
     },
+    "Скорость (PageSpeed)": {
+        "problem": "Скорость загрузки сайта ниже нормы",
+        "impact": "Скорость — прямой фактор ранжирования Google и Яндекс. Медленный сайт теряет до 40% посетителей и понижается в выдаче. Mobile Score ниже 50 — критическая зона роста.",
+        "code_location": "<!-- Проверьте детально: pagespeed.web.dev -->\n<!-- Основные причины медленной загрузки: -->\n<!-- 1. Тяжёлые несжатые изображения -->\n<!-- 2. Неминифицированные CSS и JS файлы -->\n<!-- 3. Отсутствие кэширования браузера -->\n<!-- 4. Медленный хостинг (TTFB > 600ms) -->",
+        "how_to_fix": "Оптимизируйте изображения — переконвертируйте в WebP\nВключите GZIP сжатие на сервере\nМинифицируйте CSS и JS файлы\nПодключите CDN Cloudflare (бесплатно: cloudflare.com)\nВключите кэширование браузера\nЦель: Mobile Score 50+, Desktop Score 70+\n\nWordPress: плагин WP Rocket или LiteSpeed Cache\nTilda: Настройки → Оптимизация → Сжатие\nДля всех: подключите Cloudflare как CDN\nПроверяйте прогресс: pagespeed.web.dev",
+        "result": "Ускорение сайта до 2-3 секунд загрузки даёт рост позиций в поиске и снижение показателя отказов.",
+        "metrics": ["Mobile Score 50+", "Desktop Score 70+", "Снижение отказов на 20%"],
+    },
     "HTTPS": {
         "problem": "Сайт работает по протоколу HTTP вместо HTTPS",
         "impact": "HTTPS — обязательный фактор ранжирования с 2014 года. Браузеры Chrome и Яндекс.Браузер помечают HTTP-сайты как небезопасные, что отпугивает посетителей. Поисковики отдают предпочтение HTTPS-сайтам.",
@@ -144,6 +154,61 @@ INSTRUCTIONS = {
         "metrics": ["Доверие пользователей", "Рост позиций", "Безопасность данных"],
     },
 }
+
+
+import os
+import requests as req_lib
+
+def check_pagespeed(url):
+    """Проверка скорости через Google PageSpeed Insights API (без ключа)"""
+    result = {
+        "mobile_score": None,
+        "desktop_score": None,
+        "fcp": None,
+        "lcp": None,
+        "cls": None,
+        "tbt": None,
+        "error": None,
+    }
+    try:
+        for strategy in ["mobile", "desktop"]:
+            params = {"url": url, "strategy": strategy}
+            api_key = os.getenv("PAGESPEED_API_KEY", "")
+            if api_key:
+                params["key"] = api_key
+            r = req_lib.get(
+                "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+                params=params,
+                timeout=40
+            )
+            data = r.json()
+            if "error" in data:
+                result["error"] = data["error"].get("message", "API error")
+                break
+            cats = data.get("lighthouseResult", {}).get("categories", {})
+            score = int((cats.get("performance", {}).get("score", 0) or 0) * 100)
+            if strategy == "mobile":
+                result["mobile_score"] = score
+                metrics = data.get("lighthouseResult", {}).get("audits", {})
+                result["fcp"] = metrics.get("first-contentful-paint", {}).get("displayValue", "")
+                result["lcp"] = metrics.get("largest-contentful-paint", {}).get("displayValue", "")
+                result["cls"] = metrics.get("cumulative-layout-shift", {}).get("displayValue", "")
+                result["tbt"] = metrics.get("total-blocking-time", {}).get("displayValue", "")
+            else:
+                result["desktop_score"] = score
+    except Exception as e:
+        result["error"] = str(e)
+    return result
+
+def format_score(score):
+    if score is None:
+        return "—"
+    if score >= 90:
+        return f"🟢 {score}"
+    elif score >= 50:
+        return f"🟡 {score}"
+    else:
+        return f"🔴 {score}"
 
 def audit_page(url):
     result = {"url": url, "checks": [], "score": 0, "total": 0, "size_kb": 0}

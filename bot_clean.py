@@ -250,10 +250,46 @@ async def audit_back(call: types.CallbackQuery):
     ]
     await call.message.answer("📋 Список проверок:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
+
+@dp.message(Command("speed"))
+async def cmd_speed(message: types.Message):
+    args = message.text.split()
+    if len(args) < 2:
+        audit_data["waiting_speed_" + str(message.from_user.id)] = True
+        await message.answer(
+            "⚡ Проверка скорости PageSpeed\n\n"
+            "Введите адрес сайта:"
+        )
+        return
+    url = args[1]
+    if not url.startswith("http"):
+        url = "https://" + url
+    await message.answer("⏳ Проверяю скорость " + url + "...\nПодождите 30-60 секунд.")
+    from pagespeed_funcs import check_pagespeed, format_pagespeed_report
+    result = check_pagespeed(url, "mobile")
+    await send_long(message, format_pagespeed_report(result))
+    result_d = check_pagespeed(url, "desktop")
+    await send_long(message, format_pagespeed_report(result_d))
+
 @dp.message()
 async def free_text(message: types.Message):
     uid = str(message.from_user.id)
     # Ожидание URL для аудита
+    # Ожидание URL для проверки скорости
+    skey = "waiting_speed_" + uid
+    if skey in audit_data:
+        del audit_data[skey]
+        url = message.text.strip()
+        if not url.startswith("http"):
+            url = "https://" + url
+        await message.answer("⏳ Проверяю скорость " + url + "...")
+        from pagespeed_funcs import check_pagespeed, format_pagespeed_report
+        result = check_pagespeed(url, "mobile")
+        await send_long(message, format_pagespeed_report(result))
+        result_d = check_pagespeed(url, "desktop")
+        await send_long(message, format_pagespeed_report(result_d))
+        return
+
     wkey = "waiting_url_" + uid
     if wkey in audit_data:
         del audit_data[wkey]
